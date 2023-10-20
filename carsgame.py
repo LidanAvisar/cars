@@ -15,7 +15,7 @@ BG_COLOR = (255, 255, 255)
 START_LINE_COLOR = (255, 255, 0)
 CAR_COUNT = 1
 LAP_COUNT = 3
-LOOK_AHEAD = 50
+LOOK_AHEAD = 10
 INITIAL_CAR_SPEED = 0
 CAR_REGULAR_MAX_SPEED=4
 CHECKPOINT_RADIUS = 10
@@ -120,7 +120,7 @@ class Car:
         prev_x, prev_y = self.rect.centerx, self.rect.centery
         ahead_x = self.rect.centerx + LOOK_AHEAD * math.cos(self.angle)
         ahead_y = self.rect.centery + LOOK_AHEAD * math.sin(self.angle)
-        
+
         import random
 
         if self.nitrosLeft>0 and not self.usingNitro and random.random() < 0.02 :
@@ -128,13 +128,11 @@ class Car:
         elif  self.has_oil_spill and random.random() < 0.02:
             chosenAction = DROP_OIL
         elif not self.is_inside_track(ahead_x, ahead_y) or self.is_on_inner_boundary(ahead_x, ahead_y):
-            if random.choice([True, False]):
-                chosenAction=ROTATE_RIGHT
-            else:
-                chosenAction=ROTATE_LEFT 
+            chosenAction=ROTATE_RIGHT
         else:
             chosenAction=GAS
 
+        print(f"{chosenAction} time {pygame.time.get_ticks()}")
         #Handle chosen action
         if chosenAction==ACTIVATE_NITRO and self.nitrosLeft>0 and not self.usingNitro:
             self.usingNitro=True
@@ -143,9 +141,9 @@ class Car:
             spills.append(Spill(self.rect.centerx - 40* math.cos(self.angle), self.rect.centery - 40* math.sin(self.angle)))
             self.has_oil_spill = False
         elif (chosenAction==ROTATE_RIGHT):
-            self.angle += math.pi / 8
+            self.angle += math.pi / 16
         elif (chosenAction==ROTATE_LEFT): 
-            self.angle -= math.pi / 8 
+            self.angle -= math.pi / 16 
         elif (chosenAction==GAS):
             self.regularSpeed+=GAS_SPEED_INCREASE
             if self.regularSpeed>CAR_REGULAR_MAX_SPEED:
@@ -204,8 +202,17 @@ class Car:
 
 
     def move_forward(self):
-        self.rect.x += self.speed * math.cos(self.angle)
-        self.rect.y += self.speed * math.sin(self.angle)
+        futureX=self.rect.x + self.speed * math.cos(self.angle)
+        futureY=self.rect.y + self.speed * math.sin(self.angle)
+        print(f"Is current inside track ? {self.is_inside_track(self.rect.x, self.rect.y)}")
+        print(f"Is current on inner boundary? {self.is_on_inner_boundary(self.rect.x, self.rect.y)}")
+        print(f"current position {self.rect.x}, {self.rect.y}")
+        print(f"Future position {futureX}, {futureY}")
+        print(f"Is future inside track ? {self.is_inside_track(futureX, futureY)}")
+        print(f"Is future on inner boundary? {self.is_on_inner_boundary(futureX, futureY)}")
+        if self.is_inside_track(futureX, futureY) and not self.is_on_inner_boundary(futureX, futureY):
+            self.rect.x = futureX
+            self.rect.y =futureY
 
     def handle_collisions(self):
         for other_car in cars:
@@ -232,10 +239,15 @@ class Car:
                 other_car.angle -= math.pi / 8
 
     def is_inside_track(self, x, y):
-        return pygame.draw.polygon(screen, (0, 0, 0), OUTER_BOUNDARY).collidepoint(x, y)
+        temp_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)  # Creates a temporary transparent surface
+        pygame.draw.polygon(temp_surface, (0, 0, 0), OUTER_BOUNDARY)
+        return temp_surface.get_at((int(x), int(y))) == (0, 0, 0, 255)  # Check if the pixel at (x, y) is black
 
     def is_on_inner_boundary(self, x, y):
-        return pygame.draw.polygon(screen, (0, 0, 0), INNER_BOUNDARY).collidepoint(x, y)
+        temp_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)  # Creates a temporary transparent surface
+        pygame.draw.polygon(temp_surface, (0, 0, 0), INNER_BOUNDARY)
+        return temp_surface.get_at((int(x), int(y))) == (0, 0, 0, 255)  # Check if the pixel at (x, y) is black
+
 
     def draw(self):
         rotated_image = pygame.transform.rotate(self.image, -math.degrees(self.angle))
