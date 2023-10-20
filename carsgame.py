@@ -164,7 +164,8 @@ def display_leaderboard():
 
     for i, car in enumerate(sorted_cars):
         font = pygame.font.SysFont(None, 35)
-        text = font.render(f"{i+1}. {car.name} - {car.laps} laps", True, (0, 0, 0))
+        checkpointPercentage=round(car.checkpoints_crossed/len(CHECKPOINTS)*100)
+        text = font.render(f"{i+1}. {car.name} - {car.laps} laps %{checkpointPercentage}", True, (0, 0, 0))
         y_start += 40
         screen.blit(text, (10,y_start))
 
