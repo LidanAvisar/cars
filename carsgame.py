@@ -41,6 +41,9 @@ OUTER_BOUNDARY = [
 ]
 
 # Basic car class
+# ... (same code above)
+
+# Basic car class
 class Car:
     def __init__(self):
         self.image = pygame.Surface((30, 15))
@@ -48,16 +51,19 @@ class Car:
         self.rect = self.image.get_rect()
         self.place_on_track()
         self.speed = random.randint(1, 3)
-        self.angle = random.uniform(0, 2 * math.pi)
+        self.angle = 0  # Start driving to the right
         self.laps = 0
         self.checkpoints = 0
 
     def place_on_track(self):
-        while True:
-            self.rect.x = random.randint(0, SCREEN_WIDTH)
-            self.rect.y = random.randint(0, SCREEN_HEIGHT)
-            if self.is_inside_track(self.rect.centerx, self.rect.centery) and not self.is_on_inner_boundary(self.rect.centerx, self.rect.centery):
-                break
+        # Position the cars near the starting line
+        self.rect.x = random.randint(OUTER_BOUNDARY[0][0], INNER_BOUNDARY[0][0] - self.rect.width)
+        self.rect.y = random.randint(OUTER_BOUNDARY[0][1], INNER_BOUNDARY[0][1] - self.rect.height)
+
+    # ... (rest of the Car class)
+
+# ... (rest of the main game loop and code)
+
 
     def update(self):
         # Check what's ahead
