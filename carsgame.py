@@ -19,7 +19,8 @@ LOOK_AHEAD = 50
 CAR_SPEED=4
 CHECKPOINT_RADIUS = 10
 DISTANCE_FROM_CHECKPOINT = 60
-NITRO_SPEED=10
+NITRO_SPEED=2
+NITRO_DURATION=2000
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Racing Game")
@@ -180,13 +181,13 @@ class Car:
                 break
             
         #After 2 seconds nitro should stop
-        if self.usingNitro and pygame.time.get_ticks()-self.nitroUsedTime>2000:
+        if self.usingNitro and pygame.time.get_ticks()-self.nitroUsedTime>NITRO_DURATION:
             self.usingNitro=False
 
         
-        if self.usingNitro:
+        if self.usingNitro and not self.on_oil_spill:
             self.speed = NITRO_SPEED*CAR_SPEED
-        if self.on_oil_spill:
+        elif self.on_oil_spill:
             self.speed = 0.2 * CAR_SPEED
         else:
             self.speed = CAR_SPEED
