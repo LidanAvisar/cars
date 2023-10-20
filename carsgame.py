@@ -17,6 +17,8 @@ CAR_COUNT = 8
 LAP_COUNT = 3
 LOOK_AHEAD = 50
 CAR_SPEED=4
+CHECKPOINT_RADIUS = 10
+DISTANCE_FROM_CHECKPOINT = 60
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Racing Game")
@@ -39,7 +41,14 @@ OUTER_BOUNDARY = [
     (50, 450),
     (0, 250)
 ]
-
+CHECKPOINTS = [
+    ((OUTER_BOUNDARY[1][0] + INNER_BOUNDARY[1][0]) // 2, (OUTER_BOUNDARY[1][1] + INNER_BOUNDARY[1][1]) // 2),
+    ((OUTER_BOUNDARY[2][0] + INNER_BOUNDARY[2][0]) // 2, (OUTER_BOUNDARY[2][1] + INNER_BOUNDARY[2][1]) // 2),
+    ((OUTER_BOUNDARY[3][0] + INNER_BOUNDARY[3][0]) // 2, (OUTER_BOUNDARY[3][1] + INNER_BOUNDARY[3][1]) // 2),
+    ((OUTER_BOUNDARY[4][0] + INNER_BOUNDARY[4][0]) // 2, (OUTER_BOUNDARY[4][1] + INNER_BOUNDARY[4][1]) // 2),
+    ((OUTER_BOUNDARY[5][0] + INNER_BOUNDARY[5][0]) // 2, (OUTER_BOUNDARY[5][1] + INNER_BOUNDARY[5][1]) // 2),
+    ((OUTER_BOUNDARY[0][0] + INNER_BOUNDARY[0][0]) // 2, (OUTER_BOUNDARY[0][1] + INNER_BOUNDARY[0][1]) // 2),
+]
 def dot_product(v1, v2):
     return v1[0] * v2[0] + v1[1] * v2[1]
 
@@ -58,6 +67,8 @@ class Car:
         self.angle = 0  # Start driving to the right
         self.laps = 0
         self.name = name
+        self.next_checkpoint = 0  # index of the next checkpoint to cross
+        self.checkpoints_crossed = 0  # how many checkpoints the car has crossed so far
 
         # Cache car name text
         self.name_text = pygame.font.SysFont(None, 25).render(self.name, True, (0, 0, 0))
@@ -87,9 +98,20 @@ class Car:
             move_direction = (move_direction[0] / magnitude, move_direction[1] / magnitude)
             track_dir = track_direction_at_point(self.rect.centerx, self.rect.centery)
         
-            # Check if the car has crossed the start line
-        if prev_x < INNER_BOUNDARY[0][0] and ahead_x >= INNER_BOUNDARY[0][0]:
-            self.laps += 1  # Increment laps when crossing the start line
+        
+        checkpoint_x, checkpoint_y = CHECKPOINTS[self.next_checkpoint]
+        if math.sqrt((self.rect.centerx - checkpoint_x)**2 + (self.rect.centery - checkpoint_y)**2) < DISTANCE_FROM_CHECKPOINT:
+            self.checkpoints_crossed += 1
+            self.next_checkpoint = (self.next_checkpoint + 1) % len(CHECKPOINTS)
+            print(f"Checkpoint {self.checkpoints_crossed} finished by car {self.name}")
+
+        if self.checkpoints_crossed == len(CHECKPOINTS):
+            print(f"All checkpoints finished by car {self.name}")
+        # Check if the car has crossed the start line
+        if prev_x < INNER_BOUNDARY[0][0] and ahead_x >= INNER_BOUNDARY[0][0] and self.checkpoints_crossed == len(CHECKPOINTS):
+            self.laps += 1
+            self.checkpoints_crossed = 0
+
 
 
 
@@ -162,6 +184,9 @@ while running:
     pygame.draw.polygon(screen, TRACK_COLOR, OUTER_BOUNDARY)
     pygame.draw.polygon(screen, BG_COLOR, INNER_BOUNDARY)
     pygame.draw.line(screen, START_LINE_COLOR, OUTER_BOUNDARY[0], INNER_BOUNDARY[0], 5)
+        # Draw checkpoints
+    for checkpoint in CHECKPOINTS:
+        pygame.draw.circle(screen, (0, 0, 255), checkpoint, CHECKPOINT_RADIUS)
 
     for car in cars:
         car.draw()
