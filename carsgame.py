@@ -19,6 +19,7 @@ LOOK_AHEAD = 50
 CAR_SPEED=4
 CHECKPOINT_RADIUS = 10
 DISTANCE_FROM_CHECKPOINT = 60
+NITRO_SPEED=10
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Racing Game")
@@ -49,6 +50,9 @@ CHECKPOINTS = [
     ((OUTER_BOUNDARY[5][0] + INNER_BOUNDARY[5][0]) // 2, (OUTER_BOUNDARY[5][1] + INNER_BOUNDARY[5][1]) // 2),
     ((OUTER_BOUNDARY[0][0] + INNER_BOUNDARY[0][0]) // 2, (OUTER_BOUNDARY[0][1] + INNER_BOUNDARY[0][1]) // 2),
 ]
+
+spills = []
+
 def dot_product(v1, v2):
     return v1[0] * v2[0] + v1[1] * v2[1]
 
@@ -58,9 +62,27 @@ def track_direction_at_point(x, y):
     magnitude = math.sqrt(dir_vector[0]**2 + dir_vector[1]**2)
     return (dir_vector[0] / magnitude, dir_vector[1] / magnitude)
 
+# Add constants
+OIL_SPILL_DURATION = 2000  # 2 seconds in milliseconds
+OIL_SPILL_RADIUS = 30
+OIL_SPILL_COLOR = (0, 0, 0)
+
+class Spill:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.creation_time = pygame.time.get_ticks()
+
+    def draw(self):
+        pygame.draw.circle(screen, OIL_SPILL_COLOR, (self.x, self.y), OIL_SPILL_RADIUS)
+
+    def is_expired(self):
+        return pygame.time.get_ticks() - self.creation_time > OIL_SPILL_DURATION
+
+
 class Car:
     def __init__(self, name):
-        self.image = pygame.image.load("car.png")  # Replace "car.png" with the path to your car image
+        self.image = pygame.image.load("car.png") 
         self.rect = self.image.get_rect()
         self.place_on_track()
         self.speed = CAR_SPEED
@@ -69,7 +91,12 @@ class Car:
         self.name = name
         self.next_checkpoint = 0  # index of the next checkpoint to cross
         self.checkpoints_crossed = 0  # how many checkpoints the car has crossed so far
-
+        self.has_oil_spill = True
+        self.on_oil_spill = False  # Is the car currently on an oil spill?
+        self.nitrosLeft=4
+        self.usingNitro=False
+        self.nitroUsedTime=pygame.time.get_ticks()
+        
         # Cache car name text
         self.name_text = pygame.font.SysFont(None, 25).render(self.name, True, (0, 0, 0))
 
@@ -78,18 +105,46 @@ class Car:
         self.rect.y = random.randint(OUTER_BOUNDARY[0][1], INNER_BOUNDARY[0][1] - self.rect.height)
 
     def update(self):
+        chosenAction=None
+        
+        ROTATE_RIGHT="ROTATE_RIGHT"
+        ROTATE_LEFT="ROTATE_LEFT"
+        MOVE_FORWARD="MOVE_FORWARD"
+        DROP_OIL="DROP_OIL"
+        ACTIVATE_NITRO="ACTIVATE_NITRO"
+            
         prev_x, prev_y = self.rect.centerx, self.rect.centery
         ahead_x = self.rect.centerx + LOOK_AHEAD * math.cos(self.angle)
         ahead_y = self.rect.centery + LOOK_AHEAD * math.sin(self.angle)
         
-        if not self.is_inside_track(ahead_x, ahead_y) or self.is_on_inner_boundary(ahead_x, ahead_y):
-            if random.choice([True, False]):
-                self.angle += math.pi / 8  
-            else:
-                self.angle -= math.pi / 8  
-        else:
-            self.move_forward()
+        import random
 
+        if self.nitrosLeft>0 and random.random() < 0.02:
+            chosenAction = ACTIVATE_NITRO
+        elif  self.has_oil_spill and random.random() < 0.02:
+            chosenAction = DROP_OIL
+        elif not self.is_inside_track(ahead_x, ahead_y) or self.is_on_inner_boundary(ahead_x, ahead_y):
+            if random.choice([True, False]):
+                chosenAction=ROTATE_RIGHT
+            else:
+                chosenAction=ROTATE_LEFT 
+        else:
+            chosenAction=MOVE_FORWARD
+
+        #Handle chosen action
+        if chosenAction==ACTIVATE_NITRO and self.nitrosLeft>0 and not self.usingNitro:
+            self.usingNitro=True
+            self.nitrosLeft-=1
+        elif chosenAction==DROP_OIL and self.has_oil_spill:
+            spills.append(Spill(self.rect.centerx - 40* math.cos(self.angle), self.rect.centery - 40* math.sin(self.angle)))
+            self.has_oil_spill = False
+        elif (chosenAction==ROTATE_RIGHT):
+            self.angle += math.pi / 8
+        elif (chosenAction==ROTATE_LEFT): 
+            self.angle -= math.pi / 8 
+        elif (chosenAction==MOVE_FORWARD):
+            self.move_forward()
+            
         self.handle_collisions()  # Check and handle collisions with other cars
 
         move_direction = (self.rect.centerx - prev_x, self.rect.centery - prev_y)
@@ -109,8 +164,32 @@ class Car:
             print(f"All checkpoints finished by car {self.name}")
         # Check if the car has crossed the start line
         if prev_x < INNER_BOUNDARY[0][0] and ahead_x >= INNER_BOUNDARY[0][0] and self.checkpoints_crossed == len(CHECKPOINTS):
+            if not self.has_oil_spill: #Give an oil spill every lap
+                self.has_oil_spill = True
             self.laps += 1
             self.checkpoints_crossed = 0
+        
+
+                        
+        # Check if the car is on an oil spill
+        self.on_oil_spill = False
+        for spill in spills:
+            distance_to_spill = math.sqrt((self.rect.centerx - spill.x)**2 + (self.rect.centery - spill.y)**2)
+            if distance_to_spill <= OIL_SPILL_RADIUS:
+                self.on_oil_spill = True
+                break
+            
+        #After 2 seconds nitro should stop
+        if self.usingNitro and pygame.time.get_ticks()-self.nitroUsedTime>2000:
+            self.usingNitro=False
+
+        
+        if self.usingNitro:
+            self.speed = NITRO_SPEED*CAR_SPEED
+        if self.on_oil_spill:
+            self.speed = 0.2 * CAR_SPEED
+        else:
+            self.speed = CAR_SPEED
 
 
 
@@ -159,7 +238,7 @@ leaderboard_cache = []
 
 def display_leaderboard():
 
-    sorted_cars = sorted(cars, key=lambda car: car.laps, reverse=True)[:5]
+    sorted_cars = sorted(cars, key=lambda car: car.laps*100+car.checkpoints_crossed, reverse=True)[:5]
     y_start = 10
 
     for i, car in enumerate(sorted_cars):
@@ -189,9 +268,18 @@ while running:
     for checkpoint in CHECKPOINTS:
         pygame.draw.circle(screen, (0, 0, 255), checkpoint, CHECKPOINT_RADIUS)
 
+    # Draw the oil spills
+    for spill in spills:
+        spill.draw()
+
+    # Remove expired oil spills
+    spills = [spill for spill in spills if not spill.is_expired()]
+    
     for car in cars:
         car.draw()
 
+
+    
     display_leaderboard()
 
     # Draw FPS counter
@@ -204,6 +292,6 @@ while running:
     winners = [car for car in cars if car.laps >= LAP_COUNT]
     if winners:
         print(f"Winner: {winners[0].name}")
-        # running = False
+        running = False
 
 pygame.quit()
