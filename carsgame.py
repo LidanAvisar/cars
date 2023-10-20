@@ -127,7 +127,7 @@ class Car:
             chosenAction = ACTIVATE_NITRO
         elif  self.has_oil_spill and random.random() < 0.02:
             chosenAction = DROP_OIL
-        elif not self.is_inside_track(ahead_x, ahead_y) or self.is_on_inner_boundary(ahead_x, ahead_y):
+        elif not self.is_on_track(ahead_x, ahead_y):
             chosenAction=ROTATE_RIGHT
         else:
             chosenAction=GAS
@@ -204,13 +204,8 @@ class Car:
     def move_forward(self):
         futureX=self.rect.x + self.speed * math.cos(self.angle)
         futureY=self.rect.y + self.speed * math.sin(self.angle)
-        print(f"Is current inside track ? {self.is_inside_track(self.rect.x, self.rect.y)}")
-        print(f"Is current on inner boundary? {self.is_on_inner_boundary(self.rect.x, self.rect.y)}")
-        print(f"current position {self.rect.x}, {self.rect.y}")
-        print(f"Future position {futureX}, {futureY}")
-        print(f"Is future inside track ? {self.is_inside_track(futureX, futureY)}")
-        print(f"Is future on inner boundary? {self.is_on_inner_boundary(futureX, futureY)}")
-        if self.is_inside_track(futureX, futureY) and not self.is_on_inner_boundary(futureX, futureY):
+
+        if self.is_on_track(futureX, futureY):
             self.rect.x = futureX
             self.rect.y =futureY
 
@@ -238,12 +233,15 @@ class Car:
                 self.angle += math.pi / 8
                 other_car.angle -= math.pi / 8
 
-    def is_inside_track(self, x, y):
+    def is_on_track(self, x, y):
+        return self.is_inside_outer_boundary(x, y) and not self.is_inside_inner_boundary(x, y)
+    
+    def is_inside_outer_boundary(self, x, y):
         temp_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)  # Creates a temporary transparent surface
         pygame.draw.polygon(temp_surface, (0, 0, 0), OUTER_BOUNDARY)
         return temp_surface.get_at((int(x), int(y))) == (0, 0, 0, 255)  # Check if the pixel at (x, y) is black
 
-    def is_on_inner_boundary(self, x, y):
+    def is_inside_inner_boundary(self, x, y):
         temp_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)  # Creates a temporary transparent surface
         pygame.draw.polygon(temp_surface, (0, 0, 0), INNER_BOUNDARY)
         return temp_surface.get_at((int(x), int(y))) == (0, 0, 0, 255)  # Check if the pixel at (x, y) is black
