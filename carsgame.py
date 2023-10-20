@@ -13,14 +13,16 @@ CAR_COLOR = (255, 0, 0)
 WRONG_DIR_COLOR = CAR_COLOR
 BG_COLOR = (255, 255, 255)
 START_LINE_COLOR = (255, 255, 0)
-CAR_COUNT = 8
+CAR_COUNT = 1
 LAP_COUNT = 3
 LOOK_AHEAD = 50
-CAR_SPEED=4
+INITIAL_CAR_SPEED = 0
+CAR_REGULAR_MAX_SPEED=4
 CHECKPOINT_RADIUS = 10
 DISTANCE_FROM_CHECKPOINT = 60
-NITRO_SPEED=2
+NITRO_SPEED=3
 NITRO_DURATION=2000
+GAS_SPEED_INCREASE=0.005
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Racing Game")
@@ -86,7 +88,7 @@ class Car:
         self.image = pygame.image.load("car.png") 
         self.rect = self.image.get_rect()
         self.place_on_track()
-        self.speed = CAR_SPEED
+        self.speed = INITIAL_CAR_SPEED
         self.angle = 0  # Start driving to the right
         self.laps = 0
         self.name = name
@@ -97,6 +99,7 @@ class Car:
         self.nitrosLeft=4
         self.usingNitro=False
         self.nitroUsedTime=pygame.time.get_ticks()
+        self.regularSpeed=INITIAL_CAR_SPEED
         
         # Cache car name text
         self.name_text = pygame.font.SysFont(None, 25).render(self.name, True, (0, 0, 0))
@@ -110,7 +113,7 @@ class Car:
         
         ROTATE_RIGHT="ROTATE_RIGHT"
         ROTATE_LEFT="ROTATE_LEFT"
-        MOVE_FORWARD="MOVE_FORWARD"
+        GAS="GAS"
         DROP_OIL="DROP_OIL"
         ACTIVATE_NITRO="ACTIVATE_NITRO"
             
@@ -120,7 +123,7 @@ class Car:
         
         import random
 
-        if self.nitrosLeft>0 and random.random() < 0.02:
+        if self.nitrosLeft>0 and not self.usingNitro and random.random() < 0.02 :
             chosenAction = ACTIVATE_NITRO
         elif  self.has_oil_spill and random.random() < 0.02:
             chosenAction = DROP_OIL
@@ -130,7 +133,7 @@ class Car:
             else:
                 chosenAction=ROTATE_LEFT 
         else:
-            chosenAction=MOVE_FORWARD
+            chosenAction=GAS
 
         #Handle chosen action
         if chosenAction==ACTIVATE_NITRO and self.nitrosLeft>0 and not self.usingNitro:
@@ -143,8 +146,12 @@ class Car:
             self.angle += math.pi / 8
         elif (chosenAction==ROTATE_LEFT): 
             self.angle -= math.pi / 8 
-        elif (chosenAction==MOVE_FORWARD):
-            self.move_forward()
+        elif (chosenAction==GAS):
+            self.regularSpeed+=GAS_SPEED_INCREASE
+            if self.regularSpeed>CAR_REGULAR_MAX_SPEED:
+                self.regularSpeed=CAR_REGULAR_MAX_SPEED
+            
+        self.move_forward()
             
         self.handle_collisions()  # Check and handle collisions with other cars
 
@@ -159,10 +166,10 @@ class Car:
         if math.sqrt((self.rect.centerx - checkpoint_x)**2 + (self.rect.centery - checkpoint_y)**2) < DISTANCE_FROM_CHECKPOINT:
             self.checkpoints_crossed += 1
             self.next_checkpoint = (self.next_checkpoint + 1) % len(CHECKPOINTS)
-            print(f"Checkpoint {self.checkpoints_crossed} finished by car {self.name}")
+            #print(f"Checkpoint {self.checkpoints_crossed} finished by car {self.name}")
 
-        if self.checkpoints_crossed == len(CHECKPOINTS):
-            print(f"All checkpoints finished by car {self.name}")
+        #if self.checkpoints_crossed == len(CHECKPOINTS):
+            #print(f"All checkpoints finished by car {self.name}")
         # Check if the car has crossed the start line
         if prev_x < INNER_BOUNDARY[0][0] and ahead_x >= INNER_BOUNDARY[0][0] and self.checkpoints_crossed == len(CHECKPOINTS):
             if not self.has_oil_spill: #Give an oil spill every lap
@@ -186,11 +193,12 @@ class Car:
 
         
         if self.usingNitro and not self.on_oil_spill:
-            self.speed = NITRO_SPEED*CAR_SPEED
+            self.speed = NITRO_SPEED*self.regularSpeed
+            print("Using nitro speed")
         elif self.on_oil_spill:
-            self.speed = 0.2 * CAR_SPEED
+            self.speed = 0.2 * self.regularSpeed
         else:
-            self.speed = CAR_SPEED
+            self.speed = self.regularSpeed
 
 
 
