@@ -16,6 +16,7 @@ START_LINE_COLOR = (255, 255, 0)
 CAR_COUNT = 8
 LAP_COUNT = 3
 LOOK_AHEAD = 50
+CAR_SPEED=4
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Racing Game")
@@ -53,7 +54,7 @@ class Car:
         self.image = pygame.image.load("car.png")  # Replace "car.png" with the path to your car image
         self.rect = self.image.get_rect()
         self.place_on_track()
-        self.speed = random.randint(1, 3)
+        self.speed = CAR_SPEED
         self.angle = 0  # Start driving to the right
         self.laps = 0
         self.name = name
@@ -85,6 +86,11 @@ class Car:
         if magnitude != 0:
             move_direction = (move_direction[0] / magnitude, move_direction[1] / magnitude)
             track_dir = track_direction_at_point(self.rect.centerx, self.rect.centery)
+        
+            # Check if the car has crossed the start line
+        if prev_x < INNER_BOUNDARY[0][0] and ahead_x >= INNER_BOUNDARY[0][0]:
+            self.laps += 1  # Increment laps when crossing the start line
+
 
 
     def move_forward(self):
@@ -130,17 +136,15 @@ class Car:
 leaderboard_cache = []
 
 def display_leaderboard():
-    global leaderboard_cache
+
     sorted_cars = sorted(cars, key=lambda car: car.laps, reverse=True)[:5]
     y_start = 10
-    if not leaderboard_cache:
-        for i, car in enumerate(sorted_cars):
-            font = pygame.font.SysFont(None, 35)
-            text = font.render(f"{i+1}. {car.name} - {car.laps} laps", True, (0, 0, 0))
-            leaderboard_cache.append((text, (10, y_start)))
-            y_start += 40
-    for text, position in leaderboard_cache:
-        screen.blit(text, position)
+
+    for i, car in enumerate(sorted_cars):
+        font = pygame.font.SysFont(None, 35)
+        text = font.render(f"{i+1}. {car.name} - {car.laps} laps", True, (0, 0, 0))
+        y_start += 40
+        screen.blit(text, (10,y_start))
 
 car_names = [f"Car {i+1}" for i in range(CAR_COUNT)]
 cars = [Car(name) for name in car_names]
@@ -173,7 +177,7 @@ while running:
 
     winners = [car for car in cars if car.laps >= LAP_COUNT]
     if winners:
-        print("We have winners!")
+        print(f"Winner: {winners[0].name}")
         # running = False
 
 pygame.quit()
