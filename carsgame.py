@@ -11,8 +11,10 @@ SCREEN_HEIGHT = 600
 TRACK_COLOR = (0, 255, 0)
 CAR_COLOR = (255, 0, 0)
 BG_COLOR = (255, 255, 255)
+START_LINE_COLOR = (255, 255, 0)
 CAR_COUNT = 50
 LAP_COUNT = 3
+LOOK_AHEAD = 50
 
 # Screen and clock setup
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -58,16 +60,18 @@ class Car:
                 break
 
     def update(self):
-        new_x = self.rect.x + self.speed * math.cos(self.angle)
-        new_y = self.rect.y + self.speed * math.sin(self.angle)
+        # Check what's ahead
+        ahead_x = self.rect.centerx + LOOK_AHEAD * math.cos(self.angle)
+        ahead_y = self.rect.centery + LOOK_AHEAD * math.sin(self.angle)
 
-        # Check collision with boundaries
-        if self.is_inside_track(new_x, new_y) and not self.is_on_inner_boundary(new_x, new_y):
-            self.rect.x = new_x
-            self.rect.y = new_y
+        if not self.is_inside_track(ahead_x, ahead_y) or self.is_on_inner_boundary(ahead_x, ahead_y):
+            if random.choice([True, False]):
+                self.angle += math.pi / 4  # Turn 45 degrees right
+            else:
+                self.angle -= math.pi / 4  # Turn 45 degrees left
         else:
-            self.angle += math.pi / 2  # Turn 90 degrees
-            self.checkpoints = 0  # Reset checkpoints
+            self.rect.x += self.speed * math.cos(self.angle)
+            self.rect.y += self.speed * math.sin(self.angle)
 
     def is_inside_track(self, x, y):
         return pygame.draw.polygon(screen, (0, 0, 0), OUTER_BOUNDARY).collidepoint(x, y)
@@ -94,6 +98,9 @@ while running:
     screen.fill(BG_COLOR)
     pygame.draw.polygon(screen, TRACK_COLOR, OUTER_BOUNDARY)
     pygame.draw.polygon(screen, BG_COLOR, INNER_BOUNDARY)  # Inner track
+
+    # Start/End Line
+    pygame.draw.line(screen, START_LINE_COLOR, OUTER_BOUNDARY[0], INNER_BOUNDARY[0], 5)
 
     for car in cars:
         car.draw()
