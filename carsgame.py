@@ -19,6 +19,7 @@ WRONG_DIR_COLOR = CAR_COLOR
 BG_COLOR = (255, 255, 255)
 START_LINE_COLOR = (255, 255, 0)
 LAP_COUNT = 3
+INITIAL_MISSILE_COUNT = 8
 
 INITIAL_CAR_SPEED = 0
 CAR_REGULAR_MAX_SPEED=4
@@ -39,6 +40,8 @@ ROTATE_LEFT="ROTATE_LEFT"
 GAS="GAS"
 DROP_OIL="DROP_OIL"
 ACTIVATE_NITRO="ACTIVATE_NITRO"
+SHOOT_MISSILE="SHOOT_MISSILE"
+MISSILE_SHOT_COOLDOWN=500
         
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Racing Game")
@@ -124,6 +127,26 @@ def track_direction_at_point(x, y):
     return (dir_vector[0] / magnitude, dir_vector[1] / magnitude)
 
 
+MISSILE_SPEED = 10
+MISSILE_LIFETIME = 5000  # 5 seconds
+
+class Missile:
+    def __init__(self, x, y, angle):
+        self.x = x
+        self.y = y
+        self.angle = angle
+        self.creation_time = pygame.time.get_ticks()
+
+    def move(self):
+        self.x += MISSILE_SPEED * math.cos(self.angle)
+        self.y += MISSILE_SPEED * math.sin(self.angle)
+
+    def is_expired(self):
+        return pygame.time.get_ticks() - self.creation_time > MISSILE_LIFETIME
+
+    def draw(self):
+        pygame.draw.circle(screen, (200, 0, 0), (int(self.x), int(self.y)), 5)
+
 
 class Spill:
     def __init__(self, x, y):
@@ -146,6 +169,8 @@ class Car:
         self.speed = INITIAL_CAR_SPEED
         self.angle = 0  # Start driving to the right
         self.laps = 0
+        
+
         self.name = name
         self.next_checkpoint = 0  # index of the next checkpoint to cross
         self.checkpoints_crossed = 0  # how many checkpoints the car has crossed so far
@@ -158,7 +183,18 @@ class Car:
         self.controller=controller
         # Cache car name text
         self.name_text = carNameFont.render(self.name, True, (0, 0, 0))
+        self.missiles = []
+        self.missile_count = INITIAL_MISSILE_COUNT
+        self.hit_time = None
+        self.missileShotTime=pygame.time.get_ticks()
 
+    def shoot_missile(self):
+        if self.missile_count > 0 and pygame.time.get_ticks()-self.missileShotTime>MISSILE_SHOT_COOLDOWN:
+            missile = Missile(self.rect.centerx, self.rect.centery, self.angle)
+            self.missiles.append(missile)
+            self.missile_count -= 1
+            self.missileShotTime=pygame.time.get_ticks()
+            
     def place_on_track(self):
         while True:
             randomX=random.randint(OUTER_BOUNDARY[0][0], INNER_BOUNDARY[0][0] )
@@ -175,6 +211,8 @@ class Car:
             
 
         #Handle chosen action
+        if (chosenAction==SHOOT_MISSILE):
+            self.shoot_missile()
         if chosenAction==ACTIVATE_NITRO and self.nitrosLeft>0 and not self.usingNitro:
             self.usingNitro=True
             self.nitrosLeft-=1
@@ -240,6 +278,15 @@ class Car:
             self.speed = 0.2 * self.regularSpeed
         else:
             self.speed = self.regularSpeed
+        
+        # Remove expired missiles
+        self.missiles = [m for m in self.missiles if not m.is_expired()]
+
+        # Check if hit by a missile
+        if self.hit_time and pygame.time.get_ticks() - self.hit_time > 3000:
+            self.hit_time = None  # Reset hit time
+        if self.hit_time:
+            self.regularSpeed = 0  # If hit by a missile, set speed to 0 for 3 seconds
 
 
 
@@ -362,7 +409,20 @@ while running:
     for car in cars:
         car.draw()
 
+    # Missile updates
+    for car in cars:
+        for missile in car.missiles:
+            missile.move()
 
+            for other_car in cars:
+                if other_car != car and math.sqrt((other_car.rect.centerx - missile.x)**2 + (other_car.rect.centery - missile.y)**2) < 20:  # 20 is approx. the size of a car
+                    other_car.hit_time = pygame.time.get_ticks()
+                    car.missiles.remove(missile)
+                    break
+    
+    for car in cars:
+        for missile in car.missiles:
+            missile.draw()
     
     display_leaderboard()
 
