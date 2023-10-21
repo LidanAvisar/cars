@@ -157,14 +157,20 @@ class Car:
         self.name_text = pygame.font.SysFont(None, 25).render(self.name, True, (0, 0, 0))
 
     def place_on_track(self):
-        self.rect.centerx = random.randint(OUTER_BOUNDARY[0][0], INNER_BOUNDARY[0][0] - self.rect.width)
-        self.rect.centery = random.randint(OUTER_BOUNDARY[0][1], INNER_BOUNDARY[0][1] - self.rect.height)
+        while True:
+            randomX=random.randint(OUTER_BOUNDARY[0][0], INNER_BOUNDARY[0][0] )
+            randomY=random.randint(OUTER_BOUNDARY[0][1], INNER_BOUNDARY[0][1])
+            
+            if self.is_on_track(randomX,randomY):
+                self.rect.centerx = randomX
+                self.rect.centery = randomY
+                return
 
     def update(self):
         chosenAction=None
         chosenAction=self.controller.decide_what_to_do_next(GameState(cars))
             
-        print(f"{chosenAction} time {pygame.time.get_ticks()}")
+
         #Handle chosen action
         if chosenAction==ACTIVATE_NITRO and self.nitrosLeft>0 and not self.usingNitro:
             self.usingNitro=True
@@ -258,10 +264,14 @@ class Car:
 
                 # Move both cars away from each other based on the overlap
                 move_distance = overlap_distance / 2
-                self.rect.centerx -= overlap_direction[0] * move_distance
-                self.rect.centery -= overlap_direction[1] * move_distance
-                other_car.rect.centerx += overlap_direction[0] * move_distance
-                other_car.rect.centery += overlap_direction[1] * move_distance
+                
+                #Move the car only of the new position is on track
+                if self.is_on_track(self.rect.centerx - overlap_direction[0] * move_distance, self.rect.centery - overlap_direction[1] * move_distance):
+                    self.rect.centerx -= overlap_direction[0] * move_distance
+                    self.rect.centery -= overlap_direction[1] * move_distance
+                if self.is_on_track(other_car.rect.centerx + overlap_direction[0] * move_distance, other_car.rect.centery + overlap_direction[1] * move_distance):
+                    other_car.rect.centerx += overlap_direction[0] * move_distance
+                    other_car.rect.centery += overlap_direction[1] * move_distance
 
                 # Adjust angles to simulate the push effect (you can fine-tune this)
                 self.angle += math.pi / 8
@@ -271,11 +281,19 @@ class Car:
         return self.is_inside_outer_boundary(x, y) and not self.is_inside_inner_boundary(x, y)
     
     def is_inside_outer_boundary(self, x, y):
+        #If the pixel is out of screen boundaries, return false
+        if x<0 or x>SCREEN_WIDTH or y<0 or y>SCREEN_HEIGHT:
+            return False
         temp_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)  # Creates a temporary transparent surface
         pygame.draw.polygon(temp_surface, (0, 0, 0), OUTER_BOUNDARY)
+        
+
         return temp_surface.get_at((int(x), int(y))) == (0, 0, 0, 255)  # Check if the pixel at (x, y) is black
 
     def is_inside_inner_boundary(self, x, y):
+        #If the pixel is out of screen boundaries, return false
+        if x<0 or x>SCREEN_WIDTH or y<0 or y>SCREEN_HEIGHT:
+            return False
         temp_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)  # Creates a temporary transparent surface
         pygame.draw.polygon(temp_surface, (0, 0, 0), INNER_BOUNDARY)
         return temp_surface.get_at((int(x), int(y))) == (0, 0, 0, 255)  # Check if the pixel at (x, y) is black
