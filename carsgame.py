@@ -157,8 +157,8 @@ class Car:
         self.name_text = pygame.font.SysFont(None, 25).render(self.name, True, (0, 0, 0))
 
     def place_on_track(self):
-        self.rect.x = random.randint(OUTER_BOUNDARY[0][0], INNER_BOUNDARY[0][0] - self.rect.width)
-        self.rect.y = random.randint(OUTER_BOUNDARY[0][1], INNER_BOUNDARY[0][1] - self.rect.height)
+        self.rect.centerx = random.randint(OUTER_BOUNDARY[0][0], INNER_BOUNDARY[0][0] - self.rect.width)
+        self.rect.centery = random.randint(OUTER_BOUNDARY[0][1], INNER_BOUNDARY[0][1] - self.rect.height)
 
     def update(self):
         chosenAction=None
@@ -236,12 +236,12 @@ class Car:
 
 
     def move_forward(self):
-        futureX=self.rect.x + self.speed * math.cos(self.angle)
-        futureY=self.rect.y + self.speed * math.sin(self.angle)
+        futureX=self.rect.centerx + self.speed * math.cos(self.angle)
+        futureY=self.rect.centery + self.speed * math.sin(self.angle)
 
         if self.is_on_track(futureX, futureY):
-            self.rect.x = futureX
-            self.rect.y =futureY
+            self.rect.centerx = futureX
+            self.rect.centery =futureY
 
     def handle_collisions(self):
         for other_car in cars:
@@ -258,10 +258,10 @@ class Car:
 
                 # Move both cars away from each other based on the overlap
                 move_distance = overlap_distance / 2
-                self.rect.x -= overlap_direction[0] * move_distance
-                self.rect.y -= overlap_direction[1] * move_distance
-                other_car.rect.x += overlap_direction[0] * move_distance
-                other_car.rect.y += overlap_direction[1] * move_distance
+                self.rect.centerx -= overlap_direction[0] * move_distance
+                self.rect.centery -= overlap_direction[1] * move_distance
+                other_car.rect.centerx += overlap_direction[0] * move_distance
+                other_car.rect.centery += overlap_direction[1] * move_distance
 
                 # Adjust angles to simulate the push effect (you can fine-tune this)
                 self.angle += math.pi / 8
