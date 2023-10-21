@@ -25,7 +25,7 @@ class CPUCarController(CarController):
         ahead_y = my_car.rect.centery + LOOK_AHEAD * math.sin(my_car.angle)
 
         
-        if random.random()<0.02:
+        if random.random()<0.005:
             chosenAction=SHOOT_MISSILE
         elif my_car.nitrosLeft>0 and not my_car.usingNitro and random.random() < 0.02 :
             chosenAction = ACTIVATE_NITRO

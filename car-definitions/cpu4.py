@@ -1,4 +1,4 @@
-from carsgame import Car, ACTIVATE_NITRO, DROP_OIL, GAS, ROTATE_LEFT, ROTATE_RIGHT,GameState,CarController
+from carsgame import Car, ACTIVATE_NITRO, DROP_OIL, GAS, ROTATE_LEFT, ROTATE_RIGHT,GameState,CarController,SHOOT_MISSILE
 
 import math
 import random
@@ -25,8 +25,9 @@ class CPUCarController(CarController):
         ahead_y = my_car.rect.centery + LOOK_AHEAD * math.sin(my_car.angle)
 
         
-
-        if my_car.nitrosLeft>0 and not my_car.usingNitro and random.random() < 0.02 :
+        if random.random()<0.005:
+            chosenAction=SHOOT_MISSILE
+        elif my_car.nitrosLeft>0 and not my_car.usingNitro and random.random() < 0.02 :
             chosenAction = ACTIVATE_NITRO
         elif  my_car.has_oil_spill and random.random() < 0.02:
             chosenAction = DROP_OIL

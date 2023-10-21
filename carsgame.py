@@ -29,7 +29,7 @@ NITRO_SPEED=3
 NITRO_DURATION=2000
 GAS_SPEED_INCREASE=0.005
 INCLUDE_ONLY_NON_CPU_CARS=False
-
+MISSLE_HIT_EFFECT_DURATION=1000
 
 OIL_SPILL_DURATION = 2000
 OIL_SPILL_RADIUS = 25
@@ -283,7 +283,7 @@ class Car:
         self.missiles = [m for m in self.missiles if not m.is_expired()]
 
         # Check if hit by a missile
-        if self.hit_time and pygame.time.get_ticks() - self.hit_time > 3000:
+        if self.hit_time and pygame.time.get_ticks() - self.hit_time > MISSLE_HIT_EFFECT_DURATION:
             self.hit_time = None  # Reset hit time
         if self.hit_time:
             self.regularSpeed = 0  # If hit by a missile, set speed to 0 for 3 seconds
