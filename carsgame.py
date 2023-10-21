@@ -1,3 +1,4 @@
+
 import pygame
 import random
 import math
@@ -30,7 +31,7 @@ INCLUDE_ONLY_NON_CPU_CARS=False
 
 
 OIL_SPILL_DURATION = 2000
-OIL_SPILL_RADIUS = 30
+OIL_SPILL_RADIUS = 25
 OIL_SPILL_COLOR = (0, 0, 0)
 
 ROTATE_RIGHT="ROTATE_RIGHT"
@@ -46,8 +47,8 @@ clock = pygame.time.Clock()
 INNER_BOUNDARY = [
     (150, 100),
     (650, 100),
-    (700, 250),
-    (650, 400),
+    (1100, 250),
+    (850, 400),
     (150, 400),
     (100, 250)
 ]
@@ -55,8 +56,8 @@ INNER_BOUNDARY = [
 OUTER_BOUNDARY = [
     (50, 50),
     (750, 50),
-    (800, 250),
-    (750, 450),
+    (1200, 250),
+    (950, 450),
     (50, 450),
     (0, 250)
 ]
@@ -265,17 +266,24 @@ class Car:
                 # Move both cars away from each other based on the overlap
                 move_distance = overlap_distance / 2
                 
-                #Move the car only of the new position is on track
-                if self.is_on_track(self.rect.centerx - overlap_direction[0] * move_distance, self.rect.centery - overlap_direction[1] * move_distance):
-                    self.rect.centerx -= overlap_direction[0] * move_distance
-                    self.rect.centery -= overlap_direction[1] * move_distance
-                if self.is_on_track(other_car.rect.centerx + overlap_direction[0] * move_distance, other_car.rect.centery + overlap_direction[1] * move_distance):
-                    other_car.rect.centerx += overlap_direction[0] * move_distance
-                    other_car.rect.centery += overlap_direction[1] * move_distance
-
+                # Move the car only if the new position is on track
+                new_x = self.rect.centerx - overlap_direction[0] * move_distance
+                new_y = self.rect.centery - overlap_direction[1] * move_distance
+                if self.is_on_track(new_x, new_y):
+                    self.rect.centerx = new_x
+                    self.rect.centery = new_y
+                
+                other_car_new_x = other_car.rect.centerx + overlap_direction[0] * move_distance
+                other_car_new_y = other_car.rect.centery + overlap_direction[1] * move_distance
+                if self.is_on_track(other_car_new_x, other_car_new_y):
+                    other_car.rect.centerx = other_car_new_x
+                    other_car.rect.centery = other_car_new_y
+                    
+                #Get a random number from 8 to 11 inclusive
+                randomAngleDivision=random.randint(8,11)
                 # Adjust angles to simulate the push effect (you can fine-tune this)
-                self.angle += math.pi / 8
-                other_car.angle -= math.pi / 8
+                self.angle += math.pi / randomAngleDivision
+                other_car.angle -= math.pi / randomAngleDivision
 
     def is_on_track(self, x, y):
         return self.is_inside_outer_boundary(x, y) and not self.is_inside_inner_boundary(x, y)

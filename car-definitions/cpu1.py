@@ -32,7 +32,7 @@ class CPUCarController(CarController):
             chosenAction = DROP_OIL
         elif not my_car.is_on_track(ahead_x, ahead_y):
             chosenAction=ROTATE_RIGHT
-        elif random.random() < 0.002:
+        elif random.random() < 0.008:
             chosenAction=ROTATE_LEFT
         else:
             chosenAction=GAS
