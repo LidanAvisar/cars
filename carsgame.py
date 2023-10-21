@@ -43,11 +43,13 @@ ACTIVATE_NITRO="ACTIVATE_NITRO"
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Racing Game")
 clock = pygame.time.Clock()
+leaderboardFont = pygame.font.SysFont(None, 35)
+carNameFont=pygame.font.SysFont(None, 25)
 
 INNER_BOUNDARY = [
     (150, 100),
     (650, 100),
-    (1100, 250),
+    (1050, 250),
     (850, 400),
     (150, 400),
     (100, 250)
@@ -155,7 +157,7 @@ class Car:
         self.regularSpeed=INITIAL_CAR_SPEED
         self.controller=controller
         # Cache car name text
-        self.name_text = pygame.font.SysFont(None, 25).render(self.name, True, (0, 0, 0))
+        self.name_text = carNameFont.render(self.name, True, (0, 0, 0))
 
     def place_on_track(self):
         while True:
@@ -315,14 +317,14 @@ class Car:
 
 
 def display_leaderboard():
-
+    
     sorted_cars = sorted(cars, key=lambda car: car.laps*100+car.checkpoints_crossed, reverse=True)[:5]
     y_start = 10
 
     for i, car in enumerate(sorted_cars):
-        font = pygame.font.SysFont(None, 35)
+        
         checkpointPercentage=round(car.checkpoints_crossed/len(CHECKPOINTS)*100)
-        text = font.render(f"{i+1}. {car.name} - {car.laps} laps %{checkpointPercentage}", True, (0, 0, 0))
+        text = leaderboardFont.render(f"{i+1}. {car.name} - {car.laps} laps %{checkpointPercentage}", True, (0, 0, 0))
         y_start += 40
         screen.blit(text, (10,y_start))
 
@@ -364,7 +366,8 @@ while running:
     
     display_leaderboard()
 
-    # Draw FPS counter
+
+    
     fps_text = pygame.font.SysFont(None, 25).render(f"FPS: {int(clock.get_fps())}", True, (0, 0, 0))
     screen.blit(fps_text, (SCREEN_WIDTH - 70, 10))
 
