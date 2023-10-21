@@ -1,7 +1,11 @@
 import pygame
 import random
 import math
-
+import random
+import os
+import importlib
+import inspect
+from abc import ABC, abstractmethod
 # Initialize pygame
 pygame.init()
 
@@ -13,9 +17,8 @@ CAR_COLOR = (255, 0, 0)
 WRONG_DIR_COLOR = CAR_COLOR
 BG_COLOR = (255, 255, 255)
 START_LINE_COLOR = (255, 255, 0)
-CAR_COUNT = 1
 LAP_COUNT = 3
-LOOK_AHEAD = 10
+
 INITIAL_CAR_SPEED = 0
 CAR_REGULAR_MAX_SPEED=4
 CHECKPOINT_RADIUS = 10
@@ -23,7 +26,19 @@ DISTANCE_FROM_CHECKPOINT = 60
 NITRO_SPEED=3
 NITRO_DURATION=2000
 GAS_SPEED_INCREASE=0.005
+INCLUDE_ONLY_NON_CPU_CARS=False
 
+
+OIL_SPILL_DURATION = 2000
+OIL_SPILL_RADIUS = 30
+OIL_SPILL_COLOR = (0, 0, 0)
+
+ROTATE_RIGHT="ROTATE_RIGHT"
+ROTATE_LEFT="ROTATE_LEFT"
+GAS="GAS"
+DROP_OIL="DROP_OIL"
+ACTIVATE_NITRO="ACTIVATE_NITRO"
+        
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Racing Game")
 clock = pygame.time.Clock()
@@ -55,6 +70,46 @@ CHECKPOINTS = [
 ]
 
 spills = []
+cars=[]
+
+class GameState:
+    def __init__(self, cars):
+        self.cars = cars
+        
+class CarController(ABC):
+    @abstractmethod
+    def decide_what_to_do_next(self, gamestate: GameState) -> str:
+        pass
+    
+def load_car_controllers_from_directory():
+    student_car_controllers = []
+    directory = "car-definitions"
+
+    for file in os.listdir(directory):
+        if file.endswith(".py"):
+            file_path = os.path.join(directory, file)
+            spec = importlib.util.spec_from_file_location("student_car_module", file_path)
+            student_car_module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(student_car_module)
+
+            student_car_class = None
+            car_controller_class = None
+            for name, obj in inspect.getmembers(student_car_module):
+                if inspect.isclass(obj):
+                    if obj.__name__ == 'CarController':
+                        car_controller_class = obj
+                    elif hasattr(obj, 'decide_what_to_do_next'):
+                        student_car_class = obj
+                        break
+
+            if student_car_class is not None:
+
+                student_car_controller = student_car_class(student_car_class.id)
+                if student_car_controller.id.startswith('cpu') and INCLUDE_ONLY_NON_CPU_CARS:
+                    continue
+                student_car_controllers.append(student_car_controller)
+
+    return student_car_controllers
 
 def dot_product(v1, v2):
     return v1[0] * v2[0] + v1[1] * v2[1]
@@ -65,10 +120,7 @@ def track_direction_at_point(x, y):
     magnitude = math.sqrt(dir_vector[0]**2 + dir_vector[1]**2)
     return (dir_vector[0] / magnitude, dir_vector[1] / magnitude)
 
-# Add constants
-OIL_SPILL_DURATION = 2000  # 2 seconds in milliseconds
-OIL_SPILL_RADIUS = 30
-OIL_SPILL_COLOR = (0, 0, 0)
+
 
 class Spill:
     def __init__(self, x, y):
@@ -84,7 +136,7 @@ class Spill:
 
 
 class Car:
-    def __init__(self, name):
+    def __init__(self, name,controller):
         self.image = pygame.image.load("car.png") 
         self.rect = self.image.get_rect()
         self.place_on_track()
@@ -100,7 +152,7 @@ class Car:
         self.usingNitro=False
         self.nitroUsedTime=pygame.time.get_ticks()
         self.regularSpeed=INITIAL_CAR_SPEED
-        
+        self.controller=controller
         # Cache car name text
         self.name_text = pygame.font.SysFont(None, 25).render(self.name, True, (0, 0, 0))
 
@@ -110,28 +162,8 @@ class Car:
 
     def update(self):
         chosenAction=None
-        
-        ROTATE_RIGHT="ROTATE_RIGHT"
-        ROTATE_LEFT="ROTATE_LEFT"
-        GAS="GAS"
-        DROP_OIL="DROP_OIL"
-        ACTIVATE_NITRO="ACTIVATE_NITRO"
+        chosenAction=self.controller.decide_what_to_do_next(GameState(cars))
             
-        prev_x, prev_y = self.rect.centerx, self.rect.centery
-        ahead_x = self.rect.centerx + LOOK_AHEAD * math.cos(self.angle)
-        ahead_y = self.rect.centery + LOOK_AHEAD * math.sin(self.angle)
-
-        import random
-
-        if self.nitrosLeft>0 and not self.usingNitro and random.random() < 0.02 :
-            chosenAction = ACTIVATE_NITRO
-        elif  self.has_oil_spill and random.random() < 0.02:
-            chosenAction = DROP_OIL
-        elif not self.is_on_track(ahead_x, ahead_y):
-            chosenAction=ROTATE_RIGHT
-        else:
-            chosenAction=GAS
-
         print(f"{chosenAction} time {pygame.time.get_ticks()}")
         #Handle chosen action
         if chosenAction==ACTIVATE_NITRO and self.nitrosLeft>0 and not self.usingNitro:
@@ -148,7 +180,9 @@ class Car:
             self.regularSpeed+=GAS_SPEED_INCREASE
             if self.regularSpeed>CAR_REGULAR_MAX_SPEED:
                 self.regularSpeed=CAR_REGULAR_MAX_SPEED
-            
+        
+        prev_x, prev_y = car.rect.centerx, car.rect.centery
+        
         self.move_forward()
             
         self.handle_collisions()  # Check and handle collisions with other cars
@@ -169,7 +203,7 @@ class Car:
         #if self.checkpoints_crossed == len(CHECKPOINTS):
             #print(f"All checkpoints finished by car {self.name}")
         # Check if the car has crossed the start line
-        if prev_x < INNER_BOUNDARY[0][0] and ahead_x >= INNER_BOUNDARY[0][0] and self.checkpoints_crossed == len(CHECKPOINTS):
+        if prev_x < INNER_BOUNDARY[0][0] and self.rect.centerx >= INNER_BOUNDARY[0][0] and self.checkpoints_crossed == len(CHECKPOINTS):
             if not self.has_oil_spill: #Give an oil spill every lap
                 self.has_oil_spill = True
             self.laps += 1
@@ -253,7 +287,6 @@ class Car:
         screen.blit(rotated_image, rotated_rect)
         screen.blit(self.name_text, (self.rect.x, self.rect.y + self.rect.height))
 
-leaderboard_cache = []
 
 def display_leaderboard():
 
@@ -267,8 +300,12 @@ def display_leaderboard():
         y_start += 40
         screen.blit(text, (10,y_start))
 
-car_names = [f"Car {i+1}" for i in range(CAR_COUNT)]
-cars = [Car(name) for name in car_names]
+
+car_controllers=load_car_controllers_from_directory()
+for car_controller in car_controllers:
+    carControllerId=car_controller.id
+    car=Car(carControllerId,car_controller)
+    cars.append(car)
 
 running = True
 while running:
