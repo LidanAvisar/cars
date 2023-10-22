@@ -65,14 +65,19 @@ OUTER_BOUNDARY = [
     (50, 450),
     (0, 250)
 ]
-CHECKPOINTS = [
-    ((OUTER_BOUNDARY[1][0] + INNER_BOUNDARY[1][0]) // 2, (OUTER_BOUNDARY[1][1] + INNER_BOUNDARY[1][1]) // 2),
-    ((OUTER_BOUNDARY[2][0] + INNER_BOUNDARY[2][0]) // 2, (OUTER_BOUNDARY[2][1] + INNER_BOUNDARY[2][1]) // 2),
-    ((OUTER_BOUNDARY[3][0] + INNER_BOUNDARY[3][0]) // 2, (OUTER_BOUNDARY[3][1] + INNER_BOUNDARY[3][1]) // 2),
-    ((OUTER_BOUNDARY[4][0] + INNER_BOUNDARY[4][0]) // 2, (OUTER_BOUNDARY[4][1] + INNER_BOUNDARY[4][1]) // 2),
-    ((OUTER_BOUNDARY[5][0] + INNER_BOUNDARY[5][0]) // 2, (OUTER_BOUNDARY[5][1] + INNER_BOUNDARY[5][1]) // 2),
-    ((OUTER_BOUNDARY[0][0] + INNER_BOUNDARY[0][0]) // 2, (OUTER_BOUNDARY[0][1] + INNER_BOUNDARY[0][1]) // 2),
-]
+
+# Generating CHECKPOINTS programmatically
+CHECKPOINTS = []
+for i in range(len(OUTER_BOUNDARY)):
+    x = (OUTER_BOUNDARY[i][0] + INNER_BOUNDARY[i][0]) // 2
+    y = (OUTER_BOUNDARY[i][1] + INNER_BOUNDARY[i][1]) // 2
+    CHECKPOINTS.append((x, y))
+    
+#Move the first checkpoint to the end of the list
+firstCheckpoint = CHECKPOINTS[0]
+CHECKPOINTS.remove(firstCheckpoint)
+CHECKPOINTS.append(firstCheckpoint)
+
 
 spills = []
 cars = []
@@ -379,6 +384,8 @@ for car_controller in car_controllers:
     car = Car(carControllerId, car_controller)
     cars.append(car)
 
+
+# Game loop
 running = True
 while running:
     for event in pygame.event.get():

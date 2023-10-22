@@ -21,8 +21,10 @@ def trivialLogic(carController:CarController, gameState: GameState) -> str:
         chosenAction = DROP_OIL
     elif not my_car.is_on_track(ahead_x, ahead_y):
         chosenAction=ROTATE_RIGHT
-    elif random.random() < 0.008:
+    elif random.random() < 0.002:
         chosenAction=ROTATE_LEFT
+    elif random.random() < 0.001:
+        chosenAction=ROTATE_RIGHT
     else:
         chosenAction=GAS
     return chosenAction
