@@ -79,7 +79,8 @@ spills = []
 cars=[]
 inner_surface_for_collision_checks = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
 outer_surface_for_collision_checks = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA) 
-
+pygame.draw.polygon(outer_surface_for_collision_checks, (0, 0, 0), OUTER_BOUNDARY)
+pygame.draw.polygon(inner_surface_for_collision_checks, (0, 0, 0), INNER_BOUNDARY)
 class GameState:
     def __init__(self, cars):
         self.cars = cars
@@ -344,7 +345,7 @@ class Car:
         #If the pixel is out of screen boundaries, return false
         if x<0 or x>SCREEN_WIDTH or y<0 or y>SCREEN_HEIGHT:
             return False
-        pygame.draw.polygon(outer_surface_for_collision_checks, (0, 0, 0), OUTER_BOUNDARY)
+        
         
 
         return outer_surface_for_collision_checks.get_at((int(x), int(y))) == (0, 0, 0, 255)  # Check if the pixel at (x, y) is black
@@ -354,7 +355,7 @@ class Car:
         if x<0 or x>SCREEN_WIDTH or y<0 or y>SCREEN_HEIGHT:
             return False
 
-        pygame.draw.polygon(inner_surface_for_collision_checks, (0, 0, 0), INNER_BOUNDARY)
+        
         return inner_surface_for_collision_checks.get_at((int(x), int(y))) == (0, 0, 0, 255)  # Check if the pixel at (x, y) is black
 
 
