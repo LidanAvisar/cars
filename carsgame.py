@@ -29,7 +29,7 @@ NITRO_SPEED=3
 NITRO_DURATION=2000
 GAS_SPEED_INCREASE=0.005
 INCLUDE_ONLY_NON_CPU_CARS=False
-MISSLE_HIT_EFFECT_DURATION=1000
+MISSILE_HIT_EFFECT_DURATION=1000
 
 OIL_SPILL_DURATION = 2000
 OIL_SPILL_RADIUS = 25
@@ -77,6 +77,8 @@ CHECKPOINTS = [
 
 spills = []
 cars=[]
+inner_surface_for_collision_checks = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+outer_surface_for_collision_checks = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA) 
 
 class GameState:
     def __init__(self, cars):
@@ -116,6 +118,7 @@ def load_car_controllers_from_directory():
                 student_car_controllers.append(student_car_controller)
 
     return student_car_controllers
+
 
 def dot_product(v1, v2):
     return v1[0] * v2[0] + v1[1] * v2[1]
@@ -283,7 +286,7 @@ class Car:
         self.missiles = [m for m in self.missiles if not m.is_expired()]
 
         # Check if hit by a missile
-        if self.hit_time and pygame.time.get_ticks() - self.hit_time > MISSLE_HIT_EFFECT_DURATION:
+        if self.hit_time and pygame.time.get_ticks() - self.hit_time > MISSILE_HIT_EFFECT_DURATION:
             self.hit_time = None  # Reset hit time
         if self.hit_time:
             self.regularSpeed = 0  # If hit by a missile, set speed to 0 for 3 seconds
@@ -341,19 +344,18 @@ class Car:
         #If the pixel is out of screen boundaries, return false
         if x<0 or x>SCREEN_WIDTH or y<0 or y>SCREEN_HEIGHT:
             return False
-        temp_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)  # Creates a temporary transparent surface
-        pygame.draw.polygon(temp_surface, (0, 0, 0), OUTER_BOUNDARY)
+        pygame.draw.polygon(outer_surface_for_collision_checks, (0, 0, 0), OUTER_BOUNDARY)
         
 
-        return temp_surface.get_at((int(x), int(y))) == (0, 0, 0, 255)  # Check if the pixel at (x, y) is black
+        return outer_surface_for_collision_checks.get_at((int(x), int(y))) == (0, 0, 0, 255)  # Check if the pixel at (x, y) is black
 
     def is_inside_inner_boundary(self, x, y):
-        #If the pixel is out of screen boundaries, return false
+        # If the pixel is out of screen boundaries, return false
         if x<0 or x>SCREEN_WIDTH or y<0 or y>SCREEN_HEIGHT:
             return False
-        temp_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)  # Creates a temporary transparent surface
-        pygame.draw.polygon(temp_surface, (0, 0, 0), INNER_BOUNDARY)
-        return temp_surface.get_at((int(x), int(y))) == (0, 0, 0, 255)  # Check if the pixel at (x, y) is black
+
+        pygame.draw.polygon(inner_surface_for_collision_checks, (0, 0, 0), INNER_BOUNDARY)
+        return inner_surface_for_collision_checks.get_at((int(x), int(y))) == (0, 0, 0, 255)  # Check if the pixel at (x, y) is black
 
 
     def draw(self):
