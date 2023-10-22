@@ -42,13 +42,15 @@ ACTIVATE_NITRO = "ACTIVATE_NITRO"
 SHOOT_MISSILE = "SHOOT_MISSILE"
 MISSILE_SHOT_COOLDOWN = 500
 
+USE_COMPLEX_TRACK = False
+
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Racing Game")
 clock = pygame.time.Clock()
 leaderboardFont = pygame.font.SysFont(None, 35)
 carNameFont = pygame.font.SysFont(None, 25)
 
-INNER_BOUNDARY = [
+TRIVIAL_INNER_BOUNDARY = [
     (150, 100),
     (650, 100),
     (1050, 250),
@@ -57,7 +59,7 @@ INNER_BOUNDARY = [
     (100, 250)
 ]
 
-OUTER_BOUNDARY = [
+TRIVIAL_OUTER_BOUNDARY = [
     (50, 50),
     (750, 50),
     (1200, 250),
@@ -65,6 +67,30 @@ OUTER_BOUNDARY = [
     (50, 450),
     (0, 250)
 ]
+
+COMPLEX_INNER_BOUNDARY = [
+    (150, 100),
+    (650, 100),
+    (1050, 250),
+    (850, 350),
+    (750, 250),
+    (150, 400),
+    (100, 250)
+]
+
+COMPLEX_OUTER_BOUNDARY = [
+    (50, 50),
+    (750, 50),
+    (1200, 250),
+    (950, 450),
+    (750, 350),
+    (50, 450),
+    (0, 250)
+]
+
+# If using complex track, use the complex boundaries, otherwise use the trivial ones
+INNER_BOUNDARY = COMPLEX_INNER_BOUNDARY if USE_COMPLEX_TRACK else TRIVIAL_INNER_BOUNDARY
+OUTER_BOUNDARY = COMPLEX_OUTER_BOUNDARY if USE_COMPLEX_TRACK else TRIVIAL_OUTER_BOUNDARY
 
 # Generating CHECKPOINTS programmatically
 CHECKPOINTS = []
