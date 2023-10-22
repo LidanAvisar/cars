@@ -1,5 +1,5 @@
 from carsgame import Car, ACTIVATE_NITRO, DROP_OIL, GAS, ROTATE_LEFT, ROTATE_RIGHT,GameState,CarController
-from logichelper import trivialLogic
+from logichelper import trivial_logic
 
 import math
 import random
@@ -17,6 +17,6 @@ class CPUCarController(CarController):
 
 
     def decide_what_to_do_next(self, gameState: GameState) -> str:
-        chosenAction=trivialLogic(self,gameState)
+        chosenAction=trivial_logic(self, gameState)
         return chosenAction
 
