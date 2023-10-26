@@ -5,6 +5,9 @@ import os
 import importlib
 import inspect
 from abc import ABC, abstractmethod
+import matplotlib.colors
+import numpy
+
 
 # Initialize pygame
 pygame.init()
@@ -29,6 +32,7 @@ NITRO_DURATION = 2000
 GAS_SPEED_INCREASE = 0.005
 INCLUDE_ONLY_NON_CPU_CARS = False
 MISSILE_HIT_EFFECT_DURATION = 1000
+SHOULD_DRAW_CHECKPOINTS = False
 
 OIL_SPILL_DURATION = 2000
 OIL_SPILL_RADIUS = 25
@@ -41,8 +45,10 @@ DROP_OIL = "DROP_OIL"
 ACTIVATE_NITRO = "ACTIVATE_NITRO"
 SHOOT_MISSILE = "SHOOT_MISSILE"
 MISSILE_SHOT_COOLDOWN = 500
+MISSILE_SPEED = 10
+MISSILE_LIFETIME = 5000  # 5 seconds
 
-USE_COMPLEX_TRACK = False
+USE_COMPLEX_TRACK = True
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Racing Game")
@@ -56,7 +62,7 @@ TRIVIAL_INNER_BOUNDARY = [
     (1050, 250),
     (850, 400),
     (150, 400),
-    (100, 250)
+    (100, 250),
 ]
 
 TRIVIAL_OUTER_BOUNDARY = [
@@ -65,7 +71,7 @@ TRIVIAL_OUTER_BOUNDARY = [
     (1200, 250),
     (950, 450),
     (50, 450),
-    (0, 250)
+    (0, 250),
 ]
 
 COMPLEX_INNER_BOUNDARY = [
@@ -74,8 +80,9 @@ COMPLEX_INNER_BOUNDARY = [
     (1050, 250),
     (850, 350),
     (750, 250),
-    (150, 400),
-    (100, 250)
+    (180, 400),
+    (260, 300),
+    (150, 250),
 ]
 
 COMPLEX_OUTER_BOUNDARY = [
@@ -84,8 +91,9 @@ COMPLEX_OUTER_BOUNDARY = [
     (1200, 250),
     (950, 450),
     (750, 350),
-    (50, 450),
-    (0, 250)
+    (50, 460),
+    (160, 300),
+    (50, 250),
 ]
 
 # If using complex track, use the complex boundaries, otherwise use the trivial ones
@@ -164,8 +172,7 @@ def track_direction_at_point(x, y):
     return (dir_vector[0] / magnitude, dir_vector[1] / magnitude)
 
 
-MISSILE_SPEED = 10
-MISSILE_LIFETIME = 5000  # 5 seconds
+
 
 
 class Missile:
@@ -202,9 +209,11 @@ class Spill:
         return pygame.time.get_ticks() - self.creation_time > OIL_SPILL_DURATION
 
 
+
 class Car:
     def __init__(self, name, controller):
         self.image = pygame.image.load("car.png")
+        self.image = self.tint_image(self.image)
         self.rect = self.image.get_rect()
         self.place_on_track()
         self.speed = INITIAL_CAR_SPEED
@@ -228,6 +237,28 @@ class Car:
         self.hit_time = None
         self.missileShotTime = pygame.time.get_ticks()
 
+    def tint_image(self, img):
+        # Clone the image to not modify the original one
+        tinted_img = img.copy()
+
+        # Create an empty array to store the tinted pixels
+        pixels = pygame.surfarray.pixels3d(tinted_img)
+
+        # Convert the RGB values to HSV
+        hsv_pixels = matplotlib.colors.rgb_to_hsv(pixels / 255.0)
+
+        # Shift the hue by a random value between 0 and 1
+        hue_shift = random.random()
+        hsv_pixels[..., 0] = (hsv_pixels[..., 0] + hue_shift) % 1.0
+
+        # Convert the HSV values back to RGB
+        rgb_pixels = matplotlib.colors.hsv_to_rgb(hsv_pixels)
+
+        # Update the tinted image with the new RGB values
+        pygame.surfarray.blit_array(tinted_img, (rgb_pixels * 255).astype(numpy.uint8))
+
+        return tinted_img
+    
     def shoot_missile(self):
         if self.missile_count > 0 and pygame.time.get_ticks() - self.missileShotTime > MISSILE_SHOT_COOLDOWN:
             missile = Missile(self.rect.centerx, self.rect.centery, self.angle)
@@ -425,9 +456,11 @@ while running:
     pygame.draw.polygon(screen, TRACK_COLOR, OUTER_BOUNDARY)
     pygame.draw.polygon(screen, BG_COLOR, INNER_BOUNDARY)
     pygame.draw.line(screen, START_LINE_COLOR, OUTER_BOUNDARY[0], INNER_BOUNDARY[0], 5)
-    # Draw checkpoints
-    for checkpoint in CHECKPOINTS:
-        pygame.draw.circle(screen, (0, 0, 255), checkpoint, CHECKPOINT_RADIUS)
+    
+    
+    if SHOULD_DRAW_CHECKPOINTS:
+        for checkpoint in CHECKPOINTS:
+            pygame.draw.circle(screen, (0, 0, 255), checkpoint, CHECKPOINT_RADIUS)
 
     # Draw the oil spills
     for spill in spills:
