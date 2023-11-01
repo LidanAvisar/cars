@@ -122,8 +122,9 @@ pygame.draw.polygon(inner_surface_for_collision_checks, (0, 0, 0), INNER_BOUNDAR
 
 
 class GameState:
-    def __init__(self, cars):
+    def __init__(self, cars,spills):
         self.cars = cars
+        self.spills = spills
 
 
 class CarController(ABC):
@@ -277,7 +278,7 @@ class Car:
                 return
 
     def update(self):
-        chosenAction = self.controller.decide_what_to_do_next(GameState(cars))
+        chosenAction = self.controller.decide_what_to_do_next(GameState(cars,spills))
 
         # Handle chosen action
         if (chosenAction == SHOOT_MISSILE):
@@ -430,7 +431,7 @@ def display_leaderboard():
 
     for i, car in enumerate(sorted_cars):
         checkpointPercentage = round(car.checkpoints_crossed / len(CHECKPOINTS) * 100)
-        text = leaderboardFont.render(f"{i + 1}. {car.name} - {car.laps} laps %{checkpointPercentage}", True, (0, 0, 0))
+        text = leaderboardFont.render(f"{i + 1}. {car.name} - {car.laps} laps {checkpointPercentage}%", True, (0, 0, 0))
         y_start += 40
         screen.blit(text, (SCREEN_WIDTH - 300, y_start))
 
