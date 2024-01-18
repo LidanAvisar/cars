@@ -48,7 +48,7 @@ MISSILE_SHOT_COOLDOWN = 500
 MISSILE_SPEED = 10
 MISSILE_LIFETIME = 5000  # 5 seconds
 
-USE_COMPLEX_TRACK = True
+USE_COMPLEX_TRACK = False
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Racing Game")
@@ -445,6 +445,8 @@ for car_controller in car_controllers:
 
 # Game loop
 running = True
+game_over=False
+
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -504,7 +506,21 @@ while running:
 
     winners = [car for car in cars if car.laps >= LAP_COUNT]
     if winners:
-        print(f"Winner: {winners[0].name}")
+        winner_name = winners[0].name
+        print(f"Winner: {winner_name}")
         running = False
+        game_over=True
 
+while game_over:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            game_over = False
+    
+    winner_name = winners[0].name
+    winner_text = pygame.font.SysFont(None, 60).render(f"Winner: {winner_name}", True, (255, 50, 20))
+    screen.blit(winner_text, (SCREEN_WIDTH // 2 - winner_text.get_width() // 2, SCREEN_HEIGHT // 2 - winner_text.get_height() // 2))
+
+    pygame.display.flip()
+    clock.tick(60)
+    
 pygame.quit()

@@ -28,3 +28,23 @@ def trivial_logic(carController: CarController, gameState: GameState) -> str:
     else:
         chosen_action = GAS
     return chosen_action
+
+def complete_random_logic(carController: CarController, gameState: GameState) -> str:
+    my_car = next(car for car in gameState.cars if car.name == carController.id)
+
+    if random.random() < 0.9:
+        chosen_action = GAS
+    else:
+        chosen_action = random.choice([ACTIVATE_NITRO, DROP_OIL, ROTATE_LEFT, ROTATE_RIGHT, SHOOT_MISSILE])
+
+    return chosen_action
+
+def straight_and_right_logic(carController: CarController, gameState: GameState) -> str:
+    my_car = next(car for car in gameState.cars if car.name == carController.id)
+
+    if random.random() < 0.98:
+        chosen_action = GAS
+    else:
+        chosen_action = ROTATE_RIGHT
+
+    return chosen_action
