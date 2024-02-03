@@ -1,3 +1,4 @@
+import matplotlib
 import pygame
 import math
 import random
@@ -5,7 +6,6 @@ import os
 import importlib
 import inspect
 from abc import ABC, abstractmethod
-import matplotlib.colors
 import numpy
 
 
@@ -106,7 +106,7 @@ for i in range(len(OUTER_BOUNDARY)):
     x = (OUTER_BOUNDARY[i][0] + INNER_BOUNDARY[i][0]) // 2
     y = (OUTER_BOUNDARY[i][1] + INNER_BOUNDARY[i][1]) // 2
     CHECKPOINTS.append((x, y))
-    
+
 #Move the first checkpoint to the end of the list
 firstCheckpoint = CHECKPOINTS[0]
 CHECKPOINTS.remove(firstCheckpoint)
@@ -173,9 +173,6 @@ def track_direction_at_point(x, y):
     return (dir_vector[0] / magnitude, dir_vector[1] / magnitude)
 
 
-
-
-
 class Missile:
     def __init__(self, x, y, angle):
         self.x = x
@@ -208,7 +205,6 @@ class Spill:
 
     def is_expired(self):
         return pygame.time.get_ticks() - self.creation_time > OIL_SPILL_DURATION
-
 
 
 class Car:
@@ -259,7 +255,7 @@ class Car:
         pygame.surfarray.blit_array(tinted_img, (rgb_pixels * 255).astype(numpy.uint8))
 
         return tinted_img
-    
+
     def shoot_missile(self):
         if self.missile_count > 0 and pygame.time.get_ticks() - self.missileShotTime > MISSILE_SHOT_COOLDOWN:
             missile = Missile(self.rect.centerx, self.rect.centery, self.angle)
@@ -459,8 +455,8 @@ while running:
     pygame.draw.polygon(screen, TRACK_COLOR, OUTER_BOUNDARY)
     pygame.draw.polygon(screen, BG_COLOR, INNER_BOUNDARY)
     pygame.draw.line(screen, START_LINE_COLOR, OUTER_BOUNDARY[0], INNER_BOUNDARY[0], 5)
-    
-    
+
+
     if SHOULD_DRAW_CHECKPOINTS:
         for checkpoint in CHECKPOINTS:
             pygame.draw.circle(screen, (0, 0, 255), checkpoint, CHECKPOINT_RADIUS)
@@ -515,12 +511,12 @@ while game_over:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             game_over = False
-    
+
     winner_name = winners[0].name
     winner_text = pygame.font.SysFont(None, 60).render(f"Winner: {winner_name}", True, (255, 50, 20))
     screen.blit(winner_text, (SCREEN_WIDTH // 2 - winner_text.get_width() // 2, SCREEN_HEIGHT // 2 - winner_text.get_height() // 2))
 
     pygame.display.flip()
     clock.tick(60)
-    
+
 pygame.quit()

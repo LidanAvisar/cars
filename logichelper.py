@@ -29,6 +29,7 @@ def trivial_logic(carController: CarController, gameState: GameState) -> str:
         chosen_action = GAS
     return chosen_action
 
+
 def complete_random_logic(carController: CarController, gameState: GameState) -> str:
     my_car = next(car for car in gameState.cars if car.name == carController.id)
 
